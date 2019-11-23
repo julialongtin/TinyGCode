@@ -169,12 +169,12 @@ SIGNAL (__vector_int_tx_uart)
 
 void putch(const unsigned char ch)
 {
-  if (! (UCSR0B & _BV(UDRIE0)))
-    UCSR0B |= _BV(UDRIE0);
   outbuf[outbufwritepos]=ch;
   outbufwritepos++;
   if (outbufwritepos > OUTBUFSIZE)
     outbufwritepos = 0;
+  if (! (UCSR0B & _BV(UDRIE0)))
+    UCSR0B |= _BV(UDRIE0);
 }
 
 uint8_t my_strlen_P (const unsigned char * str)
