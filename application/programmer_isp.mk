@@ -1,7 +1,7 @@
 # Makefile for tinyGCode
 
 # the port the device shows up on, for programming.
-PROGRAMMER_PORT ?= /dev/ttyUSB0
+PROGRAMMER_PORT ?= /dev/ttyUSB1
 
 # the speed the bootloader speaks at. We talk to it to program.
 PROGRAMMER_BAUD ?= 57600

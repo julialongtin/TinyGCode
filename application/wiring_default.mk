@@ -5,8 +5,14 @@
 # comment out this line to disable AMG88XX support.
 USE_AMG88xx=True
 
-# specify the i2c address of the first sensor. 68, or 69.
-AMG88xx_ADDR_1=68
+# Uncomment if you want to use Port C pin 6. This disables RESET.
+#USE_PC6=True
+
+# Uncomment if you want to use port B pin 0. This disables the cpu clock from being output on that pin.
+USE_PB0=True
+
+# processor frequency, in Hertz.
+CPUFREQ=16000000
 
 ####################################################
 # You should not have to modify anything below here.
@@ -17,11 +23,8 @@ AMG88xx_ADDR_1=68
 ifneq (${USE_AMG88xx},)
 SENSOR_TARGETS  = i2c.o
 ifneq (${AMG88xx_ADDR_1},)
-SENSOR_DEFINES  = -D AMG88XX_ADDR_1=${AMG88xx_ADDR_1}
-SENSOR_TARGETS += amg88xx_1.o
+SENSOR_TARGETS += amg88xx.o
+endif
 endif
 
-amg88xx_1.o: amg88xx.c
-	$(CC) $(CFLAGS) $(SENSOR_DEFINES) $< -o $@
-
-endif
+WIRING_DEFINES=-DCPUFREQ=${CPUFREQ}UL
