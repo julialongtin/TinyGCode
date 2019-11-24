@@ -16,30 +16,16 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-/* LED support. */
+/* LED support, header file. */
 
-#ifndef HAS_CASE_LIGHT
-#error must have HAS_CASE_LIGHT enabled!
+#ifndef _LED_H_
+#define _LED_H_
+
+#ifdef USE_LED_H
+extern void caseLightOn();
+extern void caseLightOff();
+extern void InitLED();
+#else
 #endif
 
-#ifndef LED_PIN
-#error must specify the digital pin the LED is on with LED_PIN!
 #endif
-
-#include <avr/io.h>
-
-/* assumes we are the only one doing digital I/O. */
-void InitLED(void)
-{
-  DDRB = 1<<(LED_PIN-8);
-}
-
-void caseLightOn()
-{
-  PORTB = 1<<(LED_PIN-8);
-}
-
-void caseLightOff()
-{
-  PORTB = 0;
-}

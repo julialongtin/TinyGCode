@@ -219,17 +219,13 @@ uint8_t puts_P(const unsigned char str [])
 	    if (restartTX == false)
 	      txbufremainder = OUTBUFSIZE;
 	    else
-	    txbufremainder = 0;
+	      txbufremainder = 0;
 	  }
 	else
-	  {
-	    txbufremainder = 0;
-	  }
+	  txbufremainder = 0;
       }
     else
-      {
-	txbufremainder = OUTBUFSIZE - (outbufwritepos - outbuftxpos);
-      }
+      txbufremainder = OUTBUFSIZE - (outbufwritepos - outbuftxpos);
   
   if (my_strlen_P(str) > txbufremainder)
     {
