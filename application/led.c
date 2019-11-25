@@ -28,6 +28,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <avr/io.h>
 
+/* FIXME: support 0-255 brightness adjustment. */
+
 /* assumes we are the only one doing digital I/O. */
 void InitLED(void)
 {
