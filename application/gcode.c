@@ -1,4 +1,32 @@
+/* tinyGCode -- An experimental GCODE interpreter
+
+Copyright (C) 2019 Julia Longtin
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as
+published by the Free Software Foundation, either version 3 of the
+License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
 /* GCODE interpreter */
+
+/* conforming to: https://reprap.org/wiki/G-code */
+
+/* with the following exceptions: */
+
+/* GCODE for CASE LIGHT:
+   M355 S1 P255
+   where S is the switch (on, off), and P is the duty cycle (0-255)
+   Complying with http://marlinfw.org/docs/gcode/M355.html
+*/
 
 /* for SPL, SPH. */
 #include <avr/io.h>
@@ -18,12 +46,6 @@
 
 /* because we're on a harvard archetecture, not a von-neumann machine. */
 #include <avr/pgmspace.h>
-
-/* GCODE for CASE LIGHT:
-   M355 S1 P255
-   where S is the switch (on, off), and P is the duty cycle (0-255)
-   Complying with http://marlinfw.org/docs/gcode/M355.html
-*/
 
 void process_gcode(volatile const unsigned char *);
 
@@ -105,6 +127,15 @@ uint16_t E(const uint8_t tens)
   return res;
 }
 
+uint16_t divU16(uint16_t dividend, uint16_t divisor) {
+  uint16_t quotient = 0;
+  while (dividend >= divisor) {
+    dividend -= divisor;
+    quotient++;
+  }
+  return quotient;
+}
+
 /* read a bool. 1 or 0. */
 bool matchBoolNum(volatile const unsigned char * src)
 {
@@ -114,8 +145,7 @@ bool matchBoolNum(volatile const unsigned char * src)
     return false;
 }
       
-
-/* read a string of one to three characters. */ 
+/* read a string of one to three characters. GCODE */ 
 uint16_t matchto3num(volatile const unsigned char * src)
 {
   uint8_t i = 0;
@@ -151,12 +181,56 @@ volatile const unsigned char * skipSpc(volatile const unsigned char * src)
   return &src[count];
 }
 
+volatile unsigned char U16A[6];
+void U16toA(uint16_t val)
+{
+  uint8_t digits;
+  uint8_t digit;
+  uint8_t i=0;
+  uint8_t c1;
+  /*  uint8_t c2; */
+  uint16_t handled=0;
+  if (val > 9999)
+    digits = 5;
+  else
+    if (val > 999)
+      digits = 4;
+    else
+      if (val > 99)
+	digits = 3;
+      else
+	if (val > 9)
+	  digits = 2;
+	else
+	  digits = 1;
+  for (i=0; i<digits; i++)
+    {
+      /* for the first digit, bit 16 contributes 3(2768), bit 15 contributes 1(6384), bit 14 contributes (8192), bit 15 contributes (4096) and bit 14 contributes (2048).. */
+      if ((digits-i) == 5)
+	{
+	  c1 = val >> 11;
+	  digit=((c1&16)?3:0) + ((c1&8)>>3) + (((c1&4)&&(c1&8)&&(c1&2)&&((c1&16)||(c1&1)))?2: (((c1&4)&&((c1&8)||(c1&2)||(c1&16)||(c1&1))))?1: (((c1&8)&&((c1&2)||((c1&16)&&(c1&1)))))?1:0);
+	  handled=digit*10000;
+	  U16A[i]= '0' + digit;
+	}
+      else
+	if ((digits-i) >0)
+	  {
+	    digit=divU16(val-handled, 1*E(digits-i-1));
+	    handled=handled+digit*E(digits-i-1);
+	    U16A[i] = '0' + digit;
+	  }
+	else
+	  U16A[i] = 0;
+    }
+}
+
 void process_gcode(volatile const unsigned char * buffer)
 {
   static const unsigned char okmessage[] PROGMEM = "OK\r\n";
   static const unsigned char failmessage1[] PROGMEM = "No GCODE Found\r\n";
   static const unsigned char failmessage2[] PROGMEM = "No G codes supported\r\n";
-  static const unsigned char failmessage3[] PROGMEM = "M code not supported\r\n";
+  static const unsigned char failmessage3[] PROGMEM = "M code not supported: ";
   static const unsigned char failmessage4[] PROGMEM = "Required S option not found\r\n";
   static const unsigned char failmessage5[] PROGMEM = "Required P option not found\r\n";
   volatile const unsigned char * rem;
@@ -196,7 +270,14 @@ void process_gcode(volatile const unsigned char * buffer)
 		puts_P(failmessage4);
 	    }
 	  else
-	    puts_P(failmessage3);
+	    {
+	      puts_P(failmessage3);
+	      U16toA(code);
+	      putch('M');
+	      puts_M(U16A);
+	      putch('\r');
+	      putch('\n');
+	    }
 	}
       else
 	puts_P(failmessage2);
