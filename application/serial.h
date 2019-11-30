@@ -51,8 +51,9 @@ volatile uint8_t inbufpos;
 void InitUART(void);
 void init_putch(const unsigned char);
 void putch(const unsigned char);
-//void putstr(const char *);
 uint8_t puts_P(const unsigned char *);
-uint8_t my_strlen_P( const unsigned char *);
+uint8_t my_strlen_P(const unsigned char *);
+uint8_t puts_M(const volatile unsigned char *);
+uint8_t my_strlen_M(const volatile unsigned char *);
 
 #endif

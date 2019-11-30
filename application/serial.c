@@ -48,12 +48,6 @@ volatile uint8_t outbuftxpos;
 /* our writing position in the buffer. */
 volatile uint8_t outbufwritepos;
 
-/* a flag from non-interrupts to pause the transmit interrupt process. */
-volatile bool pauseTX;
-
-/* work around race condition between setting pausetx, and a character coming in. */
-volatile bool restartTX;
-
 /* initialize the uart.
  * FIXME: make use of U2X0 only when it makes sense. */
 void InitUART(void)
@@ -76,8 +70,6 @@ void setup_rxint(void)
   use_buffer_0 = true;
   buffer_ready = false;
   process_buffer_0 = false;
-  pauseTX = false;
-  restartTX = false;
   UCSR0B |= (1 << RXCIE0);
   putch('I');
 }
@@ -179,7 +171,7 @@ uint8_t my_strlen_P (const unsigned char * str)
   return i-1;
 }
 
-uint8_t strlen (const unsigned char * str)
+uint8_t my_strlen_M (const volatile unsigned char * str)
 {
   uint8_t i;
   unsigned char j = 1;
@@ -190,12 +182,9 @@ uint8_t strlen (const unsigned char * str)
   return i-1;
 }
 
-uint8_t puts_P(const unsigned char str [])
+uint8_t getBufRemainder()
 {
   uint8_t txbufremainder;
-  uint8_t i = 0;
-  unsigned char j = 1;
-
   if (outbufwritepos > outbuftxpos)
     {
       txbufremainder = outbufwritepos - outbuftxpos;
@@ -205,34 +194,66 @@ uint8_t puts_P(const unsigned char str [])
       {
 	if (UCSR0B & _BV(UDRIE0))
 	  {
-	    if (restartTX == false)
-	      txbufremainder = OUTBUFSIZE;
-	    else
-	      txbufremainder = 0;
+	    txbufremainder = OUTBUFSIZE;
 	  }
 	else
 	  txbufremainder = 0;
       }
     else
       txbufremainder = OUTBUFSIZE - (outbufwritepos - outbuftxpos);
+  return  txbufremainder;
+}
+
+uint8_t puts_P(const unsigned char str [])
+{
+  uint8_t txbufremainder;
+  uint8_t i = 0;
+  uint8_t strlen;
+
+  txbufremainder = getBufRemainder();
+  strlen=my_strlen_P(str);
   
-  if (my_strlen_P(str) > txbufremainder)
+  if (strlen > txbufremainder)
     {
-      if (txbufremainder > 5)
+      if (txbufremainder > 4)
 	{
 	  putch('<');
-	  putch('O');
-	  putch('F');
-	  putch('0' + my_strlen_P(str));
+	  putch('0' + strlen);
 	  putch('0' + txbufremainder);
 	  putch('>');
 	}
     }
   else
-    for (i=0; j != 0; i++)
+    for (i=0; i<strlen; i++)
       {
-	j=pgm_read_byte(&(str[i]));
-	putch(j);
+	putch(pgm_read_byte(&(str[i])));
+      }
+  return i;
+}
+
+uint8_t puts_M(const volatile unsigned char str [])
+{
+  uint8_t txbufremainder;
+  uint8_t i = 0;
+  uint8_t strlen;
+
+  txbufremainder = getBufRemainder();
+  strlen=my_strlen_M(str);
+  
+  if (strlen > txbufremainder)
+    {
+      if (txbufremainder > 4)
+	{
+	  putch('<');
+	  putch('0' + strlen);
+	  putch('0' + txbufremainder);
+	  putch('>');
+	}
+    }
+  else
+    for (i=0; i<strlen; i++)
+      {
+	putch(str[i]);
       }
   return i;
 }
