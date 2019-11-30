@@ -44,7 +44,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #define USE_LED_H 1
 #include "led.h"
 
-/* because we're on a harvard archetecture, not a von-neumann machine. */
+/* because we're on a harvard archetecture, not a von-neumann machine, we need to access program memory
+ * differently than ram.
+ */
 #include <avr/pgmspace.h>
 
 void process_gcode(volatile const unsigned char *);
@@ -63,7 +65,11 @@ void app_start(uint8_t entry)
   SPH = (RAMEND-1)>>8;
 
   /* shut down clocks to unneeded components. */
+#ifdef USE_TWI
+  PRR = ~(_BV(PRUSART0)&&_BV(PRTWI));
+#else
   PRR = ~(_BV(PRUSART0));
+#endif
   
   if (entry == 0)
     {
