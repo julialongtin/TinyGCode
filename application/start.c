@@ -34,55 +34,55 @@ void start(void)
   asm volatile(
 	       "\trjmp  boot_0\n"           // Hardware reset entry point
 	       "\tnop\n"
-	       "\trjmp  boot_0\n"            // External Interrupt 0
+	       "\trjmp  boot_1\n"            // External Interrupt 0
 	       "\tnop\n"
-	       "\trjmp  boot_2\n"            // External Interrupt 1
+	       "\trjmp  boot_1\n"            // External Interrupt 1
 	       "\tnop\n"
-	       "\trjmp  boot_5\n"            // Pin Change Interrupt Request 0
+	       "\trjmp  boot_1\n"            // Pin Change Interrupt Request 0
 	       "\tnop\n"
-	       "\trjmp  boot_2\n"            // Pin Change Interrupt Request 1
+	       "\trjmp  boot_1\n"            // Pin Change Interrupt Request 1
 	       "\tnop\n"
-	       "\trjmp  boot_0\n"            // Pin Change Interrupt Request 2
+	       "\trjmp  boot_1\n"            // Pin Change Interrupt Request 2
 	       "\tnop\n"
-	       "\trjmp  boot_0\n"            // Watchdog timeout
+	       "\trjmp  boot_1\n"            // Watchdog timeout
 	       "\tnop\n"
-	       "\trjmp  boot_2\n"            // Timer/Counter 2 Compare Match A
+	       "\trjmp  boot_1\n"            // Timer/Counter 2 Compare Match A
 	       "\tnop\n"
 	       "\trjmp  boot_1\n"            // Timer/Counter 2 Compare Match B
 	       "\tnop\n"
-	       "\trjmp  boot_2\n"            // Timer/Counter 2 Overflow
+	       "\trjmp  boot_1\n"            // Timer/Counter 2 Overflow
 	       "\tnop\n"
-	       "\trjmp  boot_0\n"            // Timer/Counter 1 Capture event
+	       "\trjmp  boot_1\n"            // Timer/Counter 1 Capture event
 	       "\tnop\n"
-	       "\trjmp  boot_2\n"            // Timer/Counter 1 Compare Match A
+	       "\trjmp  boot_1\n"            // Timer/Counter 1 Compare Match A
 	       "\tnop\n"
-	       "\trjmp  boot_3\n"            // Timer/Counter 1 Compare Match B
+	       "\trjmp  boot_1\n"            // Timer/Counter 1 Compare Match B
 	       "\tnop\n"
-	       "\trjmp  boot_2\n"            // Timer/Counter 1 Overflow
+	       "\trjmp  boot_1\n"            // Timer/Counter 1 Overflow
 	       "\tnop\n"
-	       "\trjmp  boot_0\n"            // Timer/Counter 0 Compare Match A
+	       "\trjmp  boot_1\n"            // Timer/Counter 0 Compare Match A
 	       "\tnop\n"
-	       "\trjmp  boot_2\n"            // Timer/Counter 0 Compare Match B
+	       "\trjmp  boot_1\n"            // Timer/Counter 0 Compare Match B
 	       "\tnop\n"
 	       "\trjmp  boot_1\n"            // Timer/Counter 0 Overflow
 	       "\tnop\n"
-	       "\trjmp  boot_2\n"            // SPI transfer complete
+	       "\trjmp  boot_1\n"            // SPI transfer complete
 	       "\tnop\n"
 	       "\trjmp  " UART_RX_IRQ "\n"  // USART Rx Complete
 	       "\tnop\n"
 	       "\trjmp  " UART_TX_IRQ "\n"  // USART Data Register Empty
 	       "\tnop\n"
-	       "\trjmp  boot_0\n"            // USART Tx Complete
+	       "\trjmp  boot_1\n"            // USART Tx Complete
 	       "\tnop\n"
-	       "\trjmp  boot_2\n"            // ADC Conversion Complete
+	       "\trjmp  boot_1\n"            // ADC Conversion Complete
 	       "\tnop\n"
-	       "\trjmp  boot_4\n"            // EEPROM Ready
+	       "\trjmp  boot_1\n"            // EEPROM Ready
 	       "\tnop\n"
-	       "\trjmp  boot_2\n"            // Analog Comparator
+	       "\trjmp  boot_1\n"            // Analog Comparator
 	       "\tnop\n"
-	       "\trjmp  boot_0\n"            // Two Wire Interface
+	       "\trjmp  boot_1\n"            // Two Wire Interface
 	       "\tnop\n"
-	       "\trjmp  boot_2\n"            // Store Program Memory ready
+	       "\trjmp  boot_1\n"            // Store Program Memory ready
 	       );
 }
 
@@ -104,38 +104,6 @@ void boot_1(void)
 {
   asm volatile(
 	           "\tldi  R24, 1\n"
-		   "\trjmp app_start\n"
-	       );
-}
-void boot_2(void) __attribute__((naked));
-void boot_2(void)
-{
-  asm volatile(
-	           "\tldi  R24, 2\n"
-		   "\trjmp app_start\n"
-	       );
-}
-void boot_3(void) __attribute__((naked));
-void boot_3(void)
-{
-  asm volatile(
-	           "\tldi  R24, 3\n"
-		   "\trjmp app_start\n"
-	       );
-}
-void boot_4(void) __attribute__((naked));
-void boot_4(void)
-{
-  asm volatile(
-	           "\tldi  R24, 4\n"
-		   "\trjmp app_start\n"
-	       );
-}
-void boot_5(void) __attribute__((naked));
-void boot_5(void)
-{
-  asm volatile(
-	           "\tldi  R24, 4\n"
 		   "\trjmp app_start\n"
 	       );
 }
