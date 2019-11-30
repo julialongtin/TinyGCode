@@ -146,24 +146,14 @@ SIGNAL(__vector_int_rx_uart)
 
 SIGNAL (__vector_int_tx_uart)
 {
-  if (pauseTX == false)
-    {
-      if (outbuftxpos != outbufwritepos)
-	{
-	  UDR0 = outbuf[outbuftxpos];
-	  outbuftxpos++;
-	  if (outbuftxpos > OUTBUFSIZE)
-	    outbuftxpos=0;
-	}
-      else
-	{
-	  UCSR0B &= ~_BV(UDRIE0);
-	}
-    }
+  if (outbuftxpos == outbufwritepos)
+      UCSR0B &= ~_BV(UDRIE0);
   else
     {
-      restartTX = true;
-      UCSR0B &= ~_BV(UDRIE0);
+      UDR0 = outbuf[outbuftxpos];
+      outbuftxpos++;
+      if (outbuftxpos > OUTBUFSIZE)
+	outbuftxpos=0;
     }
 }
 
@@ -205,7 +195,6 @@ uint8_t puts_P(const unsigned char str [])
   uint8_t txbufremainder;
   uint8_t i = 0;
   unsigned char j = 1;
-  pauseTX = true;
 
   if (outbufwritepos > outbuftxpos)
     {
@@ -245,14 +234,6 @@ uint8_t puts_P(const unsigned char str [])
 	j=pgm_read_byte(&(str[i]));
 	putch(j);
       }
-
-  pauseTX=false;
-  if (restartTX == true)
-    {
-      restartTX = false;
-      UCSR0B |= _BV(UDRIE0);
-    }
-
   return i;
 }
 /* to be called before interrupts are set up. */

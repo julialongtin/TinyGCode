@@ -26,7 +26,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #define BAUD_RATE 9600
 
 #define CMD_LEN_MAX 13
-#define OUTBUFSIZE 33
+#define OUTBUFSIZE 100
 
 #ifdef USE_SERIAL_H
 /* input buffers */
