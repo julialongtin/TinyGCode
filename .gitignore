@@ -1,1 +1,7 @@
 *~
+application/*.elf
+application/*.hex
+application/*.lss
+application/*.lst
+application/*.map
+application/*.o
