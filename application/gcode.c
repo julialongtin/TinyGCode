@@ -176,10 +176,7 @@ uint16_t matchto3num(volatile const unsigned char * src)
   while ((src[i] >= '0') && (src[i] <= '9'))
     {
       count--;
-      if (count == 0)
-	res = res + ((src[i]-'0')); /* *10^(count-1)); */
-      else
-	res = res + ((src[i]-'0') * E(count)); /* *10^(count-1)); */
+      res = res + ((src[i]-'0') * E(count));
       i++;
     }
   return res;
