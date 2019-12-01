@@ -16,35 +16,27 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+/* AMG88xx support. Tested against the AMG8833. */
 
-/*
+/* for reti() */
+#include <avr/interrupt.h>
 
-based on:
-https://github.com/sparkfun/SparkFun_GridEYE_Arduino_Library/
-https://github.com/adafruit/Adafruit_AMG88xx/
-https://github.com/linux-downey/Seeed_AMG8833/
-https://github.com/linux-downey/AMG8833_ALGO/
-https://github.com/melopero/Melopero_AMG8833
-https://github.com/michelheil/Arduino/
-https://github.com/jodalyst/AMG8833/
-https://github.com/kriswiner/AMG8833/
-https://github.com/siopaes/BBIRCamera/
-https://github.com/ForwardLoopLLC/amg8833/
-https://github.com/OberBerger/Thermo-camera-ESP32
-
-has a stand-by mode.
-
-so, we need a gcode for setting frames 
-
-*/
-
-/*
-getdevtemp();
-amg_sleep10();
-amg_sleep60();
-*/
-
+#include <avr/io.h>
 
 void InitAMG()
 {
+  /* FIXME: set the pullups. */
+  /* enable TWI */
+  TWCR = (_BV(TWEN));
 }
+
+void setup_twiint(void)
+{
+  TWCR |= (_BV(TWIE));
+}
+
+SIGNAL(__vector_int_twi)
+{
+  TWCR &= ~(_BV(TWIE));
+}
+
