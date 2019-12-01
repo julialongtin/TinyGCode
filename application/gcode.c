@@ -66,7 +66,7 @@ void app_start(uint8_t entry)
 
   /* shut down clocks to unneeded components. */
 #ifdef USE_TWI
-  PRR = ~(_BV(PRUSART0)&&_BV(PRTWI));
+  PRR = (uint8_t)~(_BV(PRUSART0)|_BV(PRTWI));
 #else
   PRR = ~(_BV(PRUSART0));
 #endif
