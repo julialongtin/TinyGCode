@@ -41,8 +41,15 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #define USE_SERIAL_H 1
 #include "serial.h"
 
+#ifdef HAS_CASE_LIGHT
 #define USE_LED_H 1
 #include "led.h"
+#endif
+
+#ifdef HAS_AMG88XX
+#define USE_AMG88XX_H
+#include "amg88xx.h"
+#endif
 
 /* because we're on a harvard archetecture, not a von-neumann machine, we need to access program memory
  * differently than ram.
@@ -75,7 +82,14 @@ void app_start(uint8_t entry)
     {
       // setup serial communications
       InitUART();
+#ifdef HAS_CASE_LIGHT
+      // set up our LED.
       InitLED();
+#endif
+#ifdef HAS_AMG88XX
+      // set up our image sensor.
+      InitAMG();
+#endif
       /* Enable interrupts. */
       init_putch('J');
       MCUCR = _BV(IVCE);
@@ -233,16 +247,18 @@ void U16toA(uint16_t val)
 
 void process_gcode(volatile const unsigned char * buffer)
 {
-  static const unsigned char okmessage[] PROGMEM = "OK\r\n";
   static const unsigned char failmessage1[] PROGMEM = "No GCODE Found\r\n";
   static const unsigned char failmessage2[] PROGMEM = "No G codes supported\r\n";
   static const unsigned char failmessage3[] PROGMEM = "M code not supported: ";
-  static const unsigned char failmessage4[] PROGMEM = "Required S option not found\r\n";
-  static const unsigned char failmessage5[] PROGMEM = "Required P option not found\r\n";
   volatile const unsigned char * rem;
   uint16_t code;
+#ifdef HAS_CASE_LIGHT
+  static const unsigned char okmessage[] PROGMEM = "OK\r\n";
+  static const unsigned char failmessage4[] PROGMEM = "Required S option not found\r\n";
+  static const unsigned char failmessage5[] PROGMEM = "Required P option not found\r\n";
   bool switchstate;
   /*  uint8_t duty_cycle; */
+#endif
   
   rem=skipSpc(buffer);
   if (rem[0] == 'M' || rem[0] == 'G')
@@ -252,7 +268,9 @@ void process_gcode(volatile const unsigned char * buffer)
 	  rem++;
 	  code = matchto3num(rem);
 	  rem  = skipNum(rem);
-	  if (code == 355)
+	  switch (code) {
+#ifdef HAS_CASE_LIGHT
+	  case 355:
 	    {
 	      rem = skipSpc(rem);
 	      if (rem[0] == 'S')
@@ -274,8 +292,10 @@ void process_gcode(volatile const unsigned char * buffer)
 		}
 	      else
 		puts_P(failmessage4);
+	      break;
 	    }
-	  else
+#endif
+	  default:
 	    {
 	      puts_P(failmessage3);
 	      U16toA(code);
@@ -284,6 +304,7 @@ void process_gcode(volatile const unsigned char * buffer)
 	      putch('\r');
 	      putch('\n');
 	    }
+	  }
 	}
       else
 	puts_P(failmessage2);

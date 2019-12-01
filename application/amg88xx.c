@@ -45,6 +45,6 @@ amg_sleep60();
 */
 
 
-void InitAMG88xx()
+void InitAMG()
 {
 }

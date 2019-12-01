@@ -20,10 +20,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #ifndef AMG88xx_H_
 #define AMG88xx_H_
-
+#ifdef USE_AMG88XX_H
+#else
 // in celcius
 #define MINTEMP -20
 #define MAXTEMP 80
 #define RES 0.0625
+#endif
+
+void InitAMG(void);
 
 #endif
