@@ -81,6 +81,24 @@ so, we need a gcode for setting frames, ...
 #define AMG_FRM_1FPS   0x01
 #define AMG_FRM_10FPS  0x00
 
+#define MaybeTWBR(rate, mul) ((CPUFREQ/(rate)-16)/(2*mul))
+
+#if MaybeTWBR(TWI_SPEED, 1) >= 10
+#define JustTWBR MaybeTWBR(TWI_SPEED,1)
+#define TWPS_MUL 0
+#elif MaybeTWBR(TWI_SPEED,4) >= 10
+#define JustTWBR MaybeTWBR(TWI_SPEED,4)
+#define TWPS_MUL 1
+#elif MaybeTWBR(TWI_SPEED,16) >= 10
+#define JustTWBR MaybeTWBR(TWI_SPEED,16)
+#define TWPS_MUL 2
+#elif MaybeTWBR(TWI_SPEED,64) >= 10
+#define TWPS_MUL 3
+#define JustTWBR MaybeTWBR(TWI_SPEED,64)
+#else
+#error "TWI Frequency not generatable?"
+#endif
+
 void InitAMG(void);
 
 #endif

@@ -23,11 +23,28 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <avr/io.h>
 
+#include "amg88xx.h"
+
+/* for booleans. */
+#include <stdbool.h>
+
+
+#include "serial.h"
+
 void InitAMG()
 {
-  /* FIXME: set the pullups. */
+#ifdef USE_TWI_PULLUPS
+  /* use the internal pullups to pull up the TWI interface. */
+  DDRC = (_BV(DDC5)|_BV(DDC4));
+  PORTC = (_BV(PORTC5)|_BV(PORTC4));
+#endif
+  /* set the clock. */
+  TWBR = JustTWBR;
+  TWSR = TWPS_MUL;
   /* enable TWI */
   TWCR = (_BV(TWEN));
+  putch('Q');
+  putch('0'+TWPS_MUL);
 }
 
 void setup_twiint(void)
