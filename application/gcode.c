@@ -226,7 +226,7 @@ void U16toA(uint16_t val)
       if ((digits-i) == 5)
 	{
 	  c1 = val >> 11;
-	  digit=((c1&16)?3:0) + ((c1&8)>>3) + (((c1&4)&&(c1&8)&&(c1&2)&&((c1&16)||(c1&1)))?2: (((c1&4)&&((c1&8)||(c1&2)||(c1&16)||(c1&1))))?1: (((c1&8)&&((c1&2)||((c1&16)&&(c1&1)))))?1:0);
+	  digit=((c1&16)?3:0) + ((c1&8)>>3) + (((c1&4)&&(c1&8)&&(c1&2)&&(c1&17))?2: ((c1&4)&&(c1&27))?1: (((c1&8)&&((c1&2)||((c1&16)&&(c1&1)))))?1:0);
 	  handled=digit*10000;
 	  U16A[i]= '0' + digit;
 	}
@@ -266,6 +266,13 @@ void process_gcode(volatile const unsigned char * buffer)
 	  code = matchto3num(rem);
 	  rem  = skipNum(rem);
 	  switch (code) {
+#ifdef HAS_AMG88XX
+	  case 105:
+	    {
+	      /* start the transfer. */
+	      puts_P(okmessage);
+	    }
+#endif
 #ifdef HAS_CASE_LIGHT
 	  case 355:
 	    {
