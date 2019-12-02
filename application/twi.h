@@ -16,27 +16,35 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-/* AMG88xx support. Tested against the AMG8833. */
+/* two wire interfacing. */
 
-/* for reti() */
-#include <avr/interrupt.h>
+#ifndef TWI_H_
+#define TWI_H_
+#ifdef USE_TWI_H
 
-#include <avr/io.h>
+#else
 
-#include "amg88xx.h"
+#define MaybeTWBR(rate, mul) ((CPUFREQ/(rate)-16)/(2*mul))
 
-/* for booleans. */
-#include <stdbool.h>
+#if MaybeTWBR(TWI_SPEED, 1) >= 10
+#define JustTWBR MaybeTWBR(TWI_SPEED,1)
+#define TWPS_MUL 0
+#elif MaybeTWBR(TWI_SPEED,4) >= 10
+#define JustTWBR MaybeTWBR(TWI_SPEED,4)
+#define TWPS_MUL 1
+#elif MaybeTWBR(TWI_SPEED,16) >= 10
+#define JustTWBR MaybeTWBR(TWI_SPEED,16)
+#define TWPS_MUL 2
+#elif MaybeTWBR(TWI_SPEED,64) >= 10
+#define TWPS_MUL 3
+#define JustTWBR MaybeTWBR(TWI_SPEED,64)
+#else
+#error "TWI Frequency not generatable?"
+#endif
 
-#define USE_SERIAL_H
-#include "serial.h"
+#endif
 
-#define USE_TWI_H
-#include "twi.h"
+void InitTWI();
 
-void InitAMG()
-{
-  InitTWI();
+#endif
 
-  
-}

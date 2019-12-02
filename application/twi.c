@@ -18,3 +18,42 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 /* Two Wire Interface. */
 
+/* for reti() */
+#include <avr/interrupt.h>
+
+#include <avr/io.h>
+
+#include "twi.h"
+
+/* for booleans. */
+#include <stdbool.h>
+
+#define USE_SERIAL_H
+#include "serial.h"
+
+void InitTWI()
+{
+#ifdef USE_TWI_PULLUPS
+  /* use the internal pullups to pull up the TWI interface. */
+  DDRC = (_BV(DDC5)|_BV(DDC4));
+  PORTC = (_BV(PORTC5)|_BV(PORTC4));
+#endif
+  /* set the clock. */
+  TWBR = JustTWBR;
+  TWSR = TWPS_MUL;
+  /* enable TWI */
+  TWCR = (_BV(TWEN));
+  putch('Q');
+  putch('0'+TWPS_MUL);
+}
+
+void setup_twiint(void)
+{
+  TWCR |= (_BV(TWIE));
+}
+
+SIGNAL(__vector_int_twi)
+{
+  TWCR &= ~(_BV(TWIE));
+}
+
