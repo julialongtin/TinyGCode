@@ -51,7 +51,9 @@ Because of the ability for errors in the fuse setting / flashing process to make
 Please select a programmer by editing the Makefile, assuming you're not using the default 'usbtinyisp v2.0'.
 
 #### Fuses
-run ```make showfuses``` to ensure your programmer selection is working.
+Run ```make showfuses``` to ensure your programmer selection is working.
+
+Run ```make shownewfuses``` to see the fuse values that were calculated from the settings in the makefile. Read them, and understand them before setting them, or you may brick your device!
 
 #### Flashing
 
