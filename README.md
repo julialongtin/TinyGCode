@@ -23,30 +23,52 @@ tinyGCode is a G-Code interpreter, for sensors, and other components.
 
 ## Supported boards:
 
-At the moment, the only supported board is the arduino nano, with the atmega328p
+At the moment, the only supported board is the Arduino Nano, populated with an ATmega328p microcontroller.
 
 ## Supported sensors:
 
-AMG8833 infrared sensor
+~AMG8833 infrared sensor~
 
 ## Building
 
-### Dependencies
+### Dependencies:
 
-'''
+On debian-alikes:
+```
 sudo apt install make gcc-avr avrdude avr-libc
-'''
+```
 
 ### Compiling:
 
-'''
+```
 cd application
 make
-'''
+```
+
+### Programming:
+Because of the ability for errors in the fuse setting / flashing process to make a brick of your controller, I have not automated that.
+
+Please select a programmer by editing the Makefile, assuming you're not using the default 'usbtinyisp v2.0'.
+
+#### Fuses
+run ```make showfuses``` to ensure your programmer selection is working.
+
+#### Flashing
+
+To flash optiboot, and then my firmware, i use the following command:
+```
+make && sudo avrdude -c usbtiny -p atmega328p -p atmega328p -u -D -e -U flash:w:../bootloader/optiboot/optiboot/bootloaders/optiboot/optiboot_atmega328.hex && sudo avrdude -c usbtiny -p atmega328p -p atmega328p -u -D -U flash:w:tinygcode.hex
+```
 
 ## Using
+Open up your favorite serial gcode manager (mine's pronsole), or:
+```
+screen /dev/ttyUSB0
+```
 
 # Bootloader
 
-As this is meant to go on a dev board, we recommend you use our preferred bootloader(OptiBoot).
+As this is meant to go on a dev board, we recommend you use our preferred bootloader(OptiBoot). You can select which bootloader you're using by editing application/Makefile .
+
+
 
