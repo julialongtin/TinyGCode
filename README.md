@@ -57,7 +57,7 @@ run ```make showfuses``` to ensure your programmer selection is working.
 
 To flash optiboot, and then my firmware, i use the following command:
 ```
-make && sudo avrdude -c usbtiny -p atmega328p -p atmega328p -u -D -e -U flash:w:../bootloader/optiboot/optiboot/bootloaders/optiboot/optiboot_atmega328.hex && sudo avrdude -c usbtiny -p atmega328p -p atmega328p -u -D -U flash:w:tinygcode.hex
+make && sudo avrdude -c usbtiny -p atmega328p -u -D -e -U flash:w:../bootloader/optiboot/optiboot/bootloaders/optiboot/optiboot_atmega328.hex && sudo avrdude -c usbtiny -p atmega328p -u -D -U flash:w:tinygcode.hex
 ```
 
 ## Using
