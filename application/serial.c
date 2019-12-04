@@ -52,8 +52,10 @@ volatile uint8_t outbufwritepos;
  * FIXME: make use of U2X0 only when it makes sense. */
 void InitUART(void)
 {
+  /* set the clock. */
   UBRR0L = (uint8_t)(CPUFREQ/(BAUD_RATE*8L)-1);
   UBRR0H = (CPUFREQ/(BAUD_RATE*8L)-1) >> 8;
+  /* and the multiplier. */
   UCSR0A = _BV(U2X0);
   UCSR0B = _BV(TXEN0)|_BV(RXEN0);
   UCSR0C = _BV(USBS0)|_BV(UCSZ00)|_BV(UCSZ01);
