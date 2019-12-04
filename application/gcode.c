@@ -258,6 +258,9 @@ void process_gcode(volatile const unsigned char * buffer)
   bool switchstate;
   /*  uint8_t duty_cycle; */
 #endif
+#ifdef HAS_AMG88XX
+  uint16_t amg_temperature;
+#endif
   
   rem=skipSpc(buffer);
   if (rem[0] == 'M' || rem[0] == 'G')
@@ -276,6 +279,12 @@ void process_gcode(volatile const unsigned char * buffer)
 	      putByteToReg(AMG_RST, AMG_RST_INIT, AMG88XX_ADDR);
 	      putByteToReg(AMG_FRMRATE, AMG_FRM_1FPS, AMG88XX_ADDR);
 	      putByteToReg(AMG_INTCTL, AMG_INT_DIS, AMG88XX_ADDR);
+	      putch('\r');
+	      putch('\n');
+	      getBytesFromReg(AMG_THMREGL, 2, AMG88XX_ADDR);
+	      amg_temperature = (((twi_ret[1]&7)<<8)|twi_ret[0]);
+	      U16toA(amg_temperature);
+	      puts_M(U16A);
 	      putch('\r');
 	      putch('\n');
 	      puts_P(okmessage);

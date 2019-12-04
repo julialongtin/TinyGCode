@@ -74,7 +74,7 @@ SIGNAL(__vector_int_twi)
 	    TWCR = _BV(TWINT);
 	    twi_state=TWS_ERROR;
 	  }
-	break;
+	return;
       }
     case TWS_MT_SLAACK:
       {
@@ -83,16 +83,16 @@ SIGNAL(__vector_int_twi)
 	  {
 	    TWDR = twi_register;
 	    TWCR = (_BV(TWINT)|_BV(TWIE)|_BV(TWEN));
-	    twi_state=TWS_MT_DATAACK;
+	    twi_state = TWS_MT_REGISTERACK;
 	  }
 	else
 	  {
 	    TWCR = _BV(TWINT);
 	    twi_state=TWS_ERROR;
 	  }
-	break;
+	return;
       }
-    case TWS_MT_DATAACK:
+    case TWS_MT_REGISTERACK:
       {
 	putch('3');
 	if ((TWSR&0xF8) == TW_MT_DATA_ACK)
@@ -106,7 +106,7 @@ SIGNAL(__vector_int_twi)
 	    TWCR=_BV(TWINT);
 	    twi_state=TWS_ERROR;
 	  }
-	break;
+	return;
       }
     case TWS_MT_END:
       {
@@ -121,7 +121,116 @@ SIGNAL(__vector_int_twi)
 	    TWCR = (_BV(TWINT)|_BV(TWSTO)|_BV(TWEN));
 	    twi_state=TWS_ERROR;
 	  }
-	break;
+	return;
+      }
+    }
+  switch (twi_state)
+    {
+    case TWS_MR_START:
+      {
+	if ((TWSR&0xF8) == TW_START)
+	  {
+	    putch('1');
+	    TWDR = SLADDROP;
+	    TWCR = (_BV(TWINT)|_BV(TWIE)|_BV(TWEN));
+	    twi_state=TWS_MR_SLAACK;
+	  }
+	else
+	  {
+	    TWCR = (_BV(TWINT)|_BV(TWSTO)|_BV(TWEN));
+	    twi_state=TWS_ERROR;
+	  }
+	return;
+      }
+    case TWS_MR_SLAACK:
+      {
+	putch('2');
+	if ((TWSR&0xF8) == TW_MT_SLA_ACK)
+	  {
+	    TWDR = twi_register;
+	    TWCR = (_BV(TWINT)|_BV(TWIE)|_BV(TWEN));
+	    twi_state=TWS_MR_REGISTERACK;
+	  }
+	else
+	  {
+	    twi_ret[0]=(TWSR&0xF8);
+	    TWCR = (_BV(TWINT)|_BV(TWSTO)|_BV(TWEN));
+	    twi_state=TWS_ERROR;
+	  }
+	return;
+      }
+    case TWS_MR_REGISTERACK:
+      {
+	putch('3');
+	if ((TWSR&0xF8) == TW_MT_DATA_ACK)
+	  {
+	    TWCR = (_BV(TWINT)|_BV(TWSTA)|_BV(TWIE)|_BV(TWEN));
+	    twi_state=TWS_MR_START2;
+	  }
+	else
+	  {
+	    TWCR = (_BV(TWINT)|_BV(TWSTO)|_BV(TWEN));
+	    twi_state=TWS_ERROR;
+	  }
+	return;
+      }
+    case TWS_MR_START2:
+      {
+	if ((TWSR&0xF8) == TW_REP_START)
+	  {
+	    putch('4');
+	    TWDR = SLADDROP2;
+	    TWCR = (_BV(TWINT)|_BV(TWIE)|_BV(TWEN));
+	    twi_state=TWS_MR_SLAACK2;
+	  }
+	else
+	  {
+	    TWCR = (_BV(TWINT)|_BV(TWSTO)|_BV(TWEN));
+	    twi_state=TWS_ERROR;
+	  }
+	return;
+      }
+    case TWS_MR_SLAACK2:
+      {
+	putch('5');
+	if ((TWSR&0xF8) == TW_MR_SLA_ACK)
+	  {
+	    TWDR = twi_register;
+	    TWCR = (_BV(TWINT)|_BV(TWIE)|_BV(TWEN)|_BV(TWEA));
+	    twi_state=TWS_MR_DATAINCOMING;
+	  }
+	else
+	  {
+	    TWCR = (_BV(TWINT)|_BV(TWSTO)|_BV(TWEN));
+	    twi_state=TWS_ERROR;
+	  }
+	return;
+      }
+    case TWS_MR_DATAINCOMING:
+      {
+	putch('D');
+	if ((TWSR&0xF8) == TW_MR_DATA_ACK)
+	  {
+	    twi_ret[twi_readpos]=TWDR;
+	    twi_readpos++;
+	    if (twi_readpos >= twi_readbytes)
+	      {
+		putch('X');
+		TWCR = (_BV(TWINT)|_BV(TWSTO)|_BV(TWEN));
+		twi_state=TWS_IDLE;
+	      }
+	    else
+	      {
+		putch('R');
+		TWCR = (_BV(TWINT)|_BV(TWIE)|_BV(TWEN)|_BV(TWEA));
+	      }
+	  }
+	else
+	  {
+	    TWCR = (_BV(TWINT)|_BV(TWSTO)|_BV(TWEN));
+	    twi_state=TWS_ERROR;
+	  }
+	return;
       }
     default:
       {
@@ -155,4 +264,18 @@ void putByteToReg(const uint8_t byte, const uint8_t reg, const uint8_t target)
   twi_data=byte;
   TWCR = (_BV(TWINT)|_BV(TWSTA)|_BV(TWEN)|_BV(TWIE));
   twi_wait_idle();
+}
+
+uint8_t getBytesFromReg(const uint8_t reg, const uint8_t bytes, const uint8_t target)
+{
+  twi_wait_idle();
+  twi_state=TWS_MR_START;
+  SLADDROP=(uint8_t)(target<<1|TW_WRITE);
+  SLADDROP2=(uint8_t)(target<<1|TW_READ);
+  twi_readbytes=bytes;
+  twi_readpos=0;
+  twi_register=reg;
+  TWCR = (_BV(TWINT)|_BV(TWSTA)|_BV(TWEN)|_BV(TWIE));
+  twi_wait_idle();
+  return twi_readpos;
 }
