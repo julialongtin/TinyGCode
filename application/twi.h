@@ -21,8 +21,26 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef TWI_H_
 #define TWI_H_
 #ifdef USE_TWI_H
-
+#define TWI_IRQ "__vector_int_twi"
+extern void putByteToReg(const uint8_t, const uint8_t, const uint8_t);
 #else
+/* our TWI state machine. */
+#define TWS_IDLE 0
+#define TWS_MT_START 1
+#define TWS_MT_SLAACK 2
+#define TWS_ERROR 3
+#define TWS_MT_DATAACK 4
+#define TWS_MT_END 5
+/* one of the above defines. */
+volatile uint8_t twi_state;
+/* the slave address and r/w operation in one value. */
+volatile uint8_t SLADDROP;
+/* location being written on the slave device. */
+volatile uint8_t twi_register;
+/* value being written to the slave device. */
+volatile uint8_t twi_data;
+
+
 
 #define MaybeTWBR(rate, mul) ((CPUFREQ/(rate)-16)/(2*mul))
 
@@ -45,6 +63,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #endif
 
 void InitTWI();
+void setup_twiint();
 
 #endif
 

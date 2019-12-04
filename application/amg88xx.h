@@ -80,6 +80,7 @@ so, we need a gcode for setting frames, ...
 #define AMG_RST_INIT   0x3F
 #define AMG_FRM_1FPS   0x01
 #define AMG_FRM_10FPS  0x00
+#define AMG_INT_DIS    0x00
 
 void InitAMG(void);
 

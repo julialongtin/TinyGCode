@@ -49,6 +49,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifdef HAS_AMG88XX
 #define USE_AMG88XX_H
 #include "amg88xx.h"
+#define USE_TWI_H
+#include "twi.h"
 #endif
 
 /* because we're on a harvard archetecture, not a von-neumann machine, we need to access program memory
@@ -117,7 +119,7 @@ void app_start(uint8_t entry)
   /* the inner loop of our program. all work is done in the ISRs, so this should only sleep. */
   for (;;)
     {
-      /* Enter sleep mode. */
+      /* Enter idle mode. */
       SMCR = _BV(SE);
       asm volatile(
 		   "\tsleep\n"
@@ -269,8 +271,15 @@ void process_gcode(volatile const unsigned char * buffer)
 #ifdef HAS_AMG88XX
 	  case 105:
 	    {
-	      /* start the transfer. */
+	      /* Initialize the AMG. */
+	      putByteToReg(AMG_PWRCTL, AMG_PWR_NRML, AMG88XX_ADDR);
+	      putByteToReg(AMG_RST, AMG_RST_INIT, AMG88XX_ADDR);
+	      putByteToReg(AMG_FRMRATE, AMG_FRM_1FPS, AMG88XX_ADDR);
+	      putByteToReg(AMG_INTCTL, AMG_INT_DIS, AMG88XX_ADDR);
+	      putch('\r');
+	      putch('\n');
 	      puts_P(okmessage);
+	      break;
 	    }
 #endif
 #ifdef HAS_CASE_LIGHT

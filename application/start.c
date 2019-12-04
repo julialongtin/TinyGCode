@@ -26,6 +26,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #define USE_SERIAL_H
 #include "serial.h"
 
+/* We're going to use interrupt driven TWI. */
+#define USE_TWI_H
+#include "twi.h"
+
 /* A fake function, containing the interrupt table. */
 void start(void) __attribute__ ((section (".vectors")));
 void start(void)
@@ -80,7 +84,7 @@ void start(void)
 	       "\tnop\n"
 	       "\trjmp  boot_1\n"            // Analog Comparator
 	       "\tnop\n"
-	       "\trjmp  boot_1\n"            // Two Wire Interface
+	       "\trjmp  " TWI_IRQ "\n"       // Two Wire Interface
 	       "\tnop\n"
 	       "\trjmp  boot_1\n"            // Store Program Memory ready
 	       );
