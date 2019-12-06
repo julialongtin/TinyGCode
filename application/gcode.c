@@ -130,8 +130,6 @@ void app_start(uint8_t entry)
 	    process_gcode(inbuf0);
 	  else
 	    process_gcode(inbuf1);
-	  putch('>');
-	  putch(' ');
 	  buffer_ready = false;
 	}
       SMCR = 0;
