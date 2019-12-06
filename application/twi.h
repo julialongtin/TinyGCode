@@ -41,7 +41,7 @@ extern volatile uint8_t twi_ret[128];
 #define TWS_MR_START2 8
 #define TWS_MR_SLAACK2 9
 #define TWS_MR_DATAINCOMING 10
-
+#define TWS_STOP 11
 /* one of the above defines. */
 volatile uint8_t twi_state;
 /* the slave address and r/w operation in one value. */

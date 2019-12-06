@@ -14,7 +14,7 @@ USE_AMG88xx=True
 AMG88XX_ADDR=0x69
 
 # If you're using the AMG88XX, you need to pick a speed for the TWI bus to run at. maximum of 400Khz
-TWI_SPEED=100000
+TWI_SPEED=400000
 
 # Uncomment if you want to use Port C pin 6. This disables RESET, and screws with programming through the ISP connector. Know what you are doing!
 #USE_PC6=True

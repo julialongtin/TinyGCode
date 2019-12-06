@@ -50,194 +50,164 @@ void InitTWI()
   setup_twiint();
 }
 
+volatile uint8_t failure_code;
+
 void setup_twiint(void)
 {
   twi_state=0;
   SLADDROP=0;
+  failure_code=0;
 }
 
 SIGNAL(__vector_int_twi)
 {
+  uint8_t foundSR=TWSR&0xF8;
   switch (twi_state)
     {
     case TWS_MT_START:
       {
-	if ((TWSR&0xF8) == TW_START)
+	if (foundSR == TW_START)
 	  {
-	    putch('1');
 	    TWDR = SLADDROP;
 	    TWCR = (_BV(TWINT)|_BV(TWIE)|_BV(TWEN));
 	    twi_state=TWS_MT_SLAACK;
+	    return;
 	  }
 	else
-	  {
-	    TWCR = _BV(TWINT);
-	    twi_state=TWS_ERROR;
-	  }
-	return;
+	  goto fail;
       }
     case TWS_MT_SLAACK:
       {
-	putch('2');
-	if ((TWSR&0xF8) == TW_MT_SLA_ACK)
+	if (foundSR == TW_MT_SLA_ACK)
 	  {
 	    TWDR = twi_register;
 	    TWCR = (_BV(TWINT)|_BV(TWIE)|_BV(TWEN));
 	    twi_state = TWS_MT_REGISTERACK;
+	    return;
 	  }
 	else
-	  {
-	    TWCR = _BV(TWINT);
-	    twi_state=TWS_ERROR;
-	  }
-	return;
+	  goto fail;
       }
     case TWS_MT_REGISTERACK:
       {
-	putch('3');
-	if ((TWSR&0xF8) == TW_MT_DATA_ACK)
+	if (foundSR == TW_MT_DATA_ACK)
 	  {
 	    TWDR = twi_data;
 	    TWCR = (_BV(TWINT)|_BV(TWIE)|_BV(TWEN));
 	    twi_state=TWS_MT_END;
+	    return;
 	  }
 	else
-	  {
-	    TWCR=_BV(TWINT);
-	    twi_state=TWS_ERROR;
-	  }
-	return;
+	  goto fail;
       }
     case TWS_MT_END:
       {
-	putch('4');
-	if ((TWSR&0xF8) == TW_MT_DATA_ACK)
+	if (foundSR == TW_MT_DATA_ACK)
 	  {
-	    TWCR = (_BV(TWINT)|_BV(TWSTO)|_BV(TWEN));
+	    TWCR = (_BV(TWINT)|_BV(TWSTO)|_BV(TWEN)|_BV(TWIE));
 	    twi_state=TWS_IDLE;
+	    return;
 	  }
 	else
-	  {
-	    TWCR = (_BV(TWINT)|_BV(TWSTO)|_BV(TWEN));
-	    twi_state=TWS_ERROR;
-	  }
-	return;
+	  goto fail;
       }
     }
   switch (twi_state)
     {
     case TWS_MR_START:
       {
-	if ((TWSR&0xF8) == TW_START)
+	if (foundSR == TW_START)
 	  {
-	    putch('1');
 	    TWDR = SLADDROP;
 	    TWCR = (_BV(TWINT)|_BV(TWIE)|_BV(TWEN));
 	    twi_state=TWS_MR_SLAACK;
+	    return;
 	  }
 	else
-	  {
-	    TWCR = (_BV(TWINT)|_BV(TWSTO)|_BV(TWEN));
-	    twi_state=TWS_ERROR;
-	  }
-	return;
+	  goto fail;
       }
     case TWS_MR_SLAACK:
       {
-	putch('2');
-	if ((TWSR&0xF8) == TW_MT_SLA_ACK)
+	if (foundSR == TW_MT_SLA_ACK)
 	  {
 	    TWDR = twi_register;
 	    TWCR = (_BV(TWINT)|_BV(TWIE)|_BV(TWEN));
 	    twi_state=TWS_MR_REGISTERACK;
+	    return;
 	  }
 	else
-	  {
-	    twi_ret[0]=(TWSR&0xF8);
-	    TWCR = (_BV(TWINT)|_BV(TWSTO)|_BV(TWEN));
-	    twi_state=TWS_ERROR;
-	  }
-	return;
+	  goto fail;
       }
     case TWS_MR_REGISTERACK:
       {
-	putch('3');
-	if ((TWSR&0xF8) == TW_MT_DATA_ACK)
+	if (foundSR == TW_MT_DATA_ACK)
 	  {
 	    TWCR = (_BV(TWINT)|_BV(TWSTA)|_BV(TWIE)|_BV(TWEN));
 	    twi_state=TWS_MR_START2;
+	    return;
 	  }
 	else
-	  {
-	    TWCR = (_BV(TWINT)|_BV(TWSTO)|_BV(TWEN));
-	    twi_state=TWS_ERROR;
-	  }
-	return;
+	  goto fail;
       }
+    }
+  switch (twi_state)
+    {
     case TWS_MR_START2:
       {
-	if ((TWSR&0xF8) == TW_REP_START)
+	if (foundSR == TW_REP_START)
 	  {
-	    putch('4');
 	    TWDR = SLADDROP2;
 	    TWCR = (_BV(TWINT)|_BV(TWIE)|_BV(TWEN));
 	    twi_state=TWS_MR_SLAACK2;
+	    return;
 	  }
 	else
-	  {
-	    TWCR = (_BV(TWINT)|_BV(TWSTO)|_BV(TWEN));
-	    twi_state=TWS_ERROR;
-	  }
-	return;
+	  goto fail;
       }
     case TWS_MR_SLAACK2:
       {
-	putch('5');
-	if ((TWSR&0xF8) == TW_MR_SLA_ACK)
+	if (foundSR == TW_MR_SLA_ACK)
 	  {
 	    TWDR = twi_register;
 	    TWCR = (_BV(TWINT)|_BV(TWIE)|_BV(TWEN)|_BV(TWEA));
 	    twi_state=TWS_MR_DATAINCOMING;
+	    return;
 	  }
 	else
-	  {
-	    TWCR = (_BV(TWINT)|_BV(TWSTO)|_BV(TWEN));
-	    twi_state=TWS_ERROR;
-	  }
-	return;
+	  goto fail;
       }
     case TWS_MR_DATAINCOMING:
       {
-	putch('D');
-	if ((TWSR&0xF8) == TW_MR_DATA_ACK)
+	if (foundSR == TW_MR_DATA_ACK)
 	  {
 	    twi_ret[twi_readpos]=TWDR;
 	    twi_readpos++;
 	    if (twi_readpos >= twi_readbytes)
 	      {
-		putch('X');
-		TWCR = (_BV(TWINT)|_BV(TWSTO)|_BV(TWEN));
-		twi_state=TWS_IDLE;
+		/* last byte */
+		TWCR = (_BV(TWINT)|_BV(TWIE)|_BV(TWEN));
+		twi_state=TWS_STOP;
 	      }
 	    else
 	      {
-		putch('R');
 		TWCR = (_BV(TWINT)|_BV(TWIE)|_BV(TWEN)|_BV(TWEA));
 	      }
+	    return;
 	  }
 	else
-	  {
-	    TWCR = (_BV(TWINT)|_BV(TWSTO)|_BV(TWEN));
-	    twi_state=TWS_ERROR;
-	  }
-	return;
+	  goto fail;
       }
-    default:
+    case TWS_STOP:
       {
 	TWCR = (_BV(TWINT)|_BV(TWSTO)|_BV(TWEN));
-	twi_state=TWS_ERROR;
+	twi_state=TWS_IDLE;
+	return;
       }
     }
+ fail:
+  failure_code=foundSR;
+  TWCR = (_BV(TWINT)|_BV(TWSTO)|_BV(TWEN));
+  twi_state=TWS_ERROR;
 }
 
 void twi_wait_idle()
@@ -249,10 +219,12 @@ void twi_wait_idle()
 		   "\tsleep\n"
 		   );
       SMCR=0;
-      putch('W');
     }
   if (twi_state == TWS_ERROR)
-    putch('!');
+    {
+      putch('0'+failure_code);
+      putch('!');
+    }
 }
 
 void putByteToReg(const uint8_t byte, const uint8_t reg, const uint8_t target)
