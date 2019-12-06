@@ -27,7 +27,7 @@ At the moment, the only supported board is the Arduino Nano, populated with an A
 
 ## Supported sensors:
 
-~AMG8833 infrared sensor~
+AMG8833 infrared sensor
 
 ## Building
 
@@ -67,6 +67,9 @@ Open up your favorite serial gcode manager (mine's pronsole), or:
 ```
 screen /dev/ttyUSB0
 ```
+
+type 'M105' to get the temperature of the AMG88xx's thermistor.
+type 'M355 S1 P255' to turn on the nano's LED.
 
 # Bootloader
 
