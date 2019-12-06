@@ -237,9 +237,8 @@ void U16toA(uint16_t val)
 	    handled=handled+digit*E(digits-i-1);
 	    U16A[i] = '0' + digit;
 	  }
-	else
-	  U16A[i] = 0;
     }
+  U16A[digits] = 0;
 }
 
 void process_gcode(volatile const unsigned char * buffer)
