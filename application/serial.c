@@ -52,13 +52,22 @@ volatile uint8_t outbufwritepos;
  * FIXME: make use of U2X0 only when it makes sense. */
 void InitUART(void)
 {
+  uint8_t ucsr0c=0;
   /* set the clock. */
   UBRR0L = (uint8_t)(CPUFREQ/(BAUD_RATE*8L)-1);
   UBRR0H = (CPUFREQ/(BAUD_RATE*8L)-1) >> 8;
   /* and the multiplier. */
   UCSR0A = _BV(U2X0);
+  /* enable the port. */
   UCSR0B = _BV(TXEN0)|_BV(RXEN0);
-  UCSR0C = _BV(USBS0)|_BV(UCSZ00)|_BV(UCSZ01);
+  /* set the frame format. */
+  if (STOP_BITS == 2)
+      ucsr0c = _BV(USBS0);
+  if (CHARACTER_WIDTH == 8)
+    ucsr0c = ucsr0c + (_BV(UCSZ00)|_BV(UCSZ01));
+  else
+    ucsr0c = ucsr0c + _BV(UCSZ01);
+  UCSR0C=ucsr0c;
   setup_rxint();
   setup_txint();
 }
@@ -72,6 +81,7 @@ void setup_rxint(void)
   use_buffer_0 = true;
   buffer_ready = false;
   process_buffer_0 = false;
+  do_echo = true;
   UCSR0B |= (1 << RXCIE0);
   putch('I');
 }
@@ -80,7 +90,7 @@ void setup_rxint(void)
 void setup_txint(void)
 {
   outbuftxpos = 0;
-  outbufwritepos = 0;
+  outbufwritepos = 1;
   putch('J');
 }
 
@@ -93,9 +103,12 @@ SIGNAL(__vector_int_rx_uart)
     {
       if (buf == '\r')
 	{
-	  putch (buf);
 	  buf = 0;
-	  putch ('\n');
+	  if (do_echo)
+	    {
+	      putch_i ('\r');
+	      putch_i ('\n');
+	    }
 	}
       if (use_buffer_0 == true)
 	{
@@ -111,8 +124,10 @@ SIGNAL(__vector_int_rx_uart)
 	  if (buffer_ready == true)
 	    {
 	      /* a new buffer has completed while the first buffer is being processed. */
-	      putch('O');
-	      putch('>');
+	      if (! do_echo)
+		putch_i('<');
+	      putch_i('O');
+	      putch_i('>');
 	    }
 	  else
 	    {
@@ -123,42 +138,92 @@ SIGNAL(__vector_int_rx_uart)
 	}
       else
 	{
+	  if (do_echo)
+	    putch_i(buf);
 	  inbufpos++;
-	  putch(buf);
 	  if (inbufpos > CMD_LEN_MAX)
 	    {
 	      inbufpos=0;
-	      putch ('\r');
-	      putch ('\n');
-	      putch ('L');
-	      putch ('>');
+	      if (do_echo)
+		{
+		  putch_i ('\r');
+		  putch_i ('\n');
+		}
+	      else
+		putch_i ('<');
+	      putch_i ('L');
+	      putch_i ('>');
 	    }
 	}  
     }
 }
 
 
+/* outbufwritepos is always one characher ahead of the most recently written character, or 0 when
+ * the most recently written character is at outbufsize-1.
+ */
+
 SIGNAL (__vector_int_tx_uart)
 {
-  if (outbuftxpos == outbufwritepos)
-      UCSR0B &= ~_BV(UDRIE0);
+  UDR0 = outbuf[outbuftxpos]; /* outbuf[outbuftxpos]; */
+  if (outbuftxpos+1 == OUTBUFSIZE)
+    {
+      outbuftxpos=0;
+      if (outbufwritepos == 0)
+	UCSR0B ^= _BV(UDRIE0);
+    }
   else
     {
-      UDR0 = outbuf[outbuftxpos];
       outbuftxpos++;
-      if (outbuftxpos > OUTBUFSIZE)
-	outbuftxpos=0;
+      if (outbuftxpos == outbufwritepos)
+	UCSR0B ^= _BV(UDRIE0);
     }
+}
+
+/* must always be called with interrupts disabled. */
+void putch_c(void)
+{
+  if (outbufwritepos+1 == OUTBUFSIZE)
+    outbufwritepos = 0;
+  else
+    outbufwritepos++;
 }
 
 void putch(const unsigned char ch)
 {
+  cli();
   outbuf[outbufwritepos]=ch;
-  outbufwritepos++;
-  if (outbufwritepos > OUTBUFSIZE)
-    outbufwritepos = 0;
+  putch_c();
+  sei();
   if (! (UCSR0B & _BV(UDRIE0)))
     UCSR0B |= _BV(UDRIE0);
+}
+
+void putch_i(const unsigned char ch)
+{
+  outbuf[outbufwritepos]=ch;
+  putch_c();
+  if (! (UCSR0B & _BV(UDRIE0)))
+    UCSR0B |= _BV(UDRIE0);
+}
+
+/* to be called before interrupts are set up. */
+void init_putch(unsigned char ch)
+{
+  while (!(UCSR0A & _BV(UDRE0)))
+    ;
+  UDR0 = ch;
+}
+
+uint8_t getBufRemainder()
+{
+  if (outbufwritepos == outbuftxpos)
+    return OUTBUFSIZE;
+  if (outbufwritepos > outbuftxpos)
+    return OUTBUFSIZE - (outbufwritepos - outbuftxpos);
+  else
+    /* we wrapped around. */
+    return OUTBUFSIZE - (outbuftxpos - outbufwritepos);
 }
 
 uint8_t my_strlen_P (const unsigned char * str)
@@ -184,36 +249,14 @@ uint8_t my_strlen_M (const volatile unsigned char * str)
   return i-1;
 }
 
-uint8_t getBufRemainder()
-{
-  uint8_t txbufremainder;
-  if (outbufwritepos > outbuftxpos)
-    {
-      txbufremainder = outbufwritepos - outbuftxpos;
-    }
-  else
-    if (outbufwritepos == outbuftxpos)
-      {
-	if (UCSR0B & _BV(UDRIE0))
-	  {
-	    txbufremainder = OUTBUFSIZE;
-	  }
-	else
-	  txbufremainder = 0;
-      }
-    else
-      txbufremainder = OUTBUFSIZE - (outbufwritepos - outbuftxpos);
-  return  txbufremainder;
-}
-
 uint8_t puts_P(const unsigned char str [])
 {
   uint8_t txbufremainder;
   uint8_t i = 0;
   uint8_t strlen;
 
-  txbufremainder = getBufRemainder();
   strlen=my_strlen_P(str);
+  txbufremainder = getBufRemainder();
   
   if (strlen > txbufremainder)
     {
@@ -226,10 +269,14 @@ uint8_t puts_P(const unsigned char str [])
 	}
     }
   else
-    for (i=0; i<strlen; i++)
-      {
-	putch(pgm_read_byte(&(str[i])));
-      }
+    {
+      cli();
+      for (i=0; i<strlen; i++)
+	{
+	  putch_i(pgm_read_byte(&(str[i])));
+	}
+      sei();
+    }
   return i;
 }
 
@@ -239,8 +286,8 @@ uint8_t puts_M(const volatile unsigned char str [])
   uint8_t i = 0;
   uint8_t strlen;
 
-  txbufremainder = getBufRemainder();
   strlen=my_strlen_M(str);
+  txbufremainder = getBufRemainder();
   
   if (strlen > txbufremainder)
     {
@@ -253,16 +300,13 @@ uint8_t puts_M(const volatile unsigned char str [])
 	}
     }
   else
-    for (i=0; i<strlen; i++)
-      {
-	putch(str[i]);
-      }
+    {
+      cli();
+      for (i=0; i<strlen; i++)
+	{
+	  putch(str[i]);
+	}
+      sei();
+    }
   return i;
-}
-/* to be called before interrupts are set up. */
-void init_putch(unsigned char ch)
-{
-  while (!(UCSR0A & _BV(UDRE0)))
-    ;
-  UDR0 = ch;
 }

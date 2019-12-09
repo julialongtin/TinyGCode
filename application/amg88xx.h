@@ -54,7 +54,9 @@ so, we need a gcode for setting frames, ...
 #define AMG88xx_H_
 #ifdef USE_AMG88XX_H
 /* extern declarations of shared buffers go here. */
+extern volatile unsigned char AMGTEMPA[10];
 #else
+volatile unsigned char AMGTEMPA[10];
 // in celcius
 #define MINTEMP -20
 #define MAXTEMP 80
@@ -83,5 +85,6 @@ so, we need a gcode for setting frames, ...
 #define AMG_INT_DIS    0x00
 
 void InitAMG(void);
+void AMGTEMPtoA(uint16_t);
 
 #endif

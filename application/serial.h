@@ -24,6 +24,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #define UART_RX_IRQ "__vector_int_rx_uart"
 #define UART_TX_IRQ "__vector_int_tx_uart"
 #define BAUD_RATE 9600
+#define CHARACTER_WIDTH 7
+#define STOP_BITS 1
 
 #define CMD_LEN_MAX 13
 #define OUTBUFSIZE 100
@@ -34,6 +36,7 @@ extern volatile unsigned char inbuf0[CMD_LEN_MAX+1];
 extern volatile unsigned char inbuf1[CMD_LEN_MAX+1];
 extern volatile bool buffer_ready;
 extern volatile bool process_buffer_0;
+extern volatile bool do_echo;
 
 #else
 /* input buffers */
@@ -42,6 +45,7 @@ volatile char unsigned inbuf1[CMD_LEN_MAX+1];
 volatile bool use_buffer_0;
 volatile bool buffer_ready;
 volatile bool process_buffer_0;
+volatile bool do_echo;
 
 /* our position in the buffer. */
 volatile uint8_t inbufpos;
@@ -51,6 +55,7 @@ volatile uint8_t inbufpos;
 void InitUART(void);
 void init_putch(const unsigned char);
 void putch(const unsigned char);
+void putch_i(const unsigned char);
 uint8_t puts_P(const unsigned char *);
 uint8_t my_strlen_P(const unsigned char *);
 uint8_t puts_M(const volatile unsigned char *);

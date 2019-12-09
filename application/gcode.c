@@ -246,17 +246,17 @@ void process_gcode(volatile const unsigned char * buffer)
   static const unsigned char failmessage1[] PROGMEM = "No GCODE Found\r\n";
   static const unsigned char failmessage2[] PROGMEM = "No G codes supported\r\n";
   static const unsigned char failmessage3[] PROGMEM = "M code not supported: ";
+  static const unsigned char failmessage4[] PROGMEM = "Required S option not found\r\n";
   volatile const unsigned char * rem;
   uint16_t code;
 #ifdef HAS_CASE_LIGHT
-  static const unsigned char okmessage[] PROGMEM = "OK\r\n";
-  static const unsigned char failmessage4[] PROGMEM = "Required S option not found\r\n";
+  static const unsigned char okmessage[] PROGMEM = "ok\r\n";
   static const unsigned char failmessage5[] PROGMEM = "Required P option not found\r\n";
   bool switchstate;
   /*  uint8_t duty_cycle; */
 #endif
 #ifdef HAS_AMG88XX
-  static const unsigned char temperaturemessage[] PROGMEM = "Temperature: ";
+  static const unsigned char temperaturemessage[] PROGMEM = "ok S:";
   uint16_t amg_temperature;
 #endif
   
@@ -272,22 +272,30 @@ void process_gcode(volatile const unsigned char * buffer)
 #ifdef HAS_AMG88XX
 	  case 105:
 	    {
-	      /* Initialize the AMG. */
-	      putByteToReg(AMG_PWRCTL, AMG_PWR_NRML, AMG88XX_ADDR);
-	      putByteToReg(AMG_RST, AMG_RST_INIT, AMG88XX_ADDR);
-	      putByteToReg(AMG_FRMRATE, AMG_FRM_1FPS, AMG88XX_ADDR);
-	      putByteToReg(AMG_INTCTL, AMG_INT_DIS, AMG88XX_ADDR);
 	      /* get our thermistor temperature. */
 	      getBytesFromReg(AMG_THMREGL, 2, AMG88XX_ADDR);
 	      amg_temperature = (((twi_ret[1]&7)<<8)|twi_ret[0]);
-	      U16toA(amg_temperature);
 	      puts_P(temperaturemessage);
-	      puts_M(U16A);
+	      AMGTEMPtoA(amg_temperature);
+	      puts_M(AMGTEMPA);
 	      putch('\r');
 	      putch('\n');
 	      break;
 	    }
 #endif
+	  case 111:
+	    {
+	      rem = skipSpc(rem);
+	      if (rem[0] == 'S')
+		{
+		  rem++;
+		  do_echo = matchBoolNum(rem);
+		  puts_P(okmessage);
+		}
+	      else
+		puts_P(failmessage4);
+	      break;
+	    }
 #ifdef HAS_CASE_LIGHT
 	  case 355:
 	    {
