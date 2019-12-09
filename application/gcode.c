@@ -311,7 +311,7 @@ void process_gcode(volatile const unsigned char * buffer)
   uint8_t i;
   static const unsigned char temperaturemessage[] PROGMEM = "ok S:";
   static const unsigned char startcameramessage[] PROGMEM = "ok\r\n\"image_as_json\":{";
-  static const unsigned char pixelMessage[] PROGMEM = " \"p";
+  static const unsigned char pixelMessage[] PROGMEM = " \"T";
   static const unsigned char stopcameramessage[] PROGMEM = " }\r\n";
   uint16_t amg_temperature;
   uint16_t pixel_temperature;
@@ -364,7 +364,7 @@ void process_gcode(volatile const unsigned char * buffer)
 		{
 		  if (i!=0)
 		    putch(',');
-		  U7toA(i);
+		  U7toA(i+1);
 		  puts_P(pixelMessage);
 		  puts_M(U7A);
 		  putch('\"');
