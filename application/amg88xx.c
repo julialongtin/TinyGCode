@@ -44,16 +44,6 @@ void InitAMG()
   putByteToReg(AMG_INTCTL, AMG_INT_DIS, AMG88XX_ADDR);
 }
 
-uint8_t mod10(uint8_t val)
-{
-  uint8_t ret=val;
-  while (ret > 9)
-    {
-      ret=ret-10;
-    }
-  return ret;
-}
-
 void AMGTEMPtoA(uint16_t temp)
 {
   uint8_t digit;
@@ -106,7 +96,7 @@ void AMGTEMPtoA(uint16_t temp)
 			  (((
 			    ((whole&8)&&(whole&16)&&(((whole&64)&&(whole&38))||((whole&4)&&(whole&34))))||
 			    (((whole&8)&&(whole&64)&&(whole&4)&&(whole&32)&&(whole&2))))?2:
-			    ((((whole&8)&&(whole&118))||((whole&16)&&((whole&68)||(whole&34)))||((whole&64)&&(whole&32)&&(whole&4)))?1:0
+			    ((((whole&8)&&(whole&118))||((whole&16)&&((whole&68)||((whole&32)&&(whole&2))))||((whole&64)&&(whole&32)&&(whole&4)))?1:0
 			     ))));
 	    AMGTEMPA[i+polaritydigits]='0'+digit;
 	  }

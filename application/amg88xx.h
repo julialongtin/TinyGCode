@@ -84,6 +84,7 @@ volatile unsigned char AMGTEMPA[10];
 #define AMG_FRM_10FPS  0x00
 #define AMG_INT_DIS    0x00
 
+extern uint8_t mod10(uint8_t);
 void InitAMG(void);
 void AMGTEMPtoA(uint16_t);
 

@@ -198,6 +198,58 @@ volatile const unsigned char * skipSpc(volatile const unsigned char * src)
   return &src[count];
 }
 
+uint8_t mod10(uint8_t val)
+{
+  uint8_t ret=val;
+  while (ret > 9)
+    {
+      ret=ret-10;
+    }
+  return ret;
+}
+
+volatile unsigned char U7A[4];
+void U7toA(uint8_t val)
+{
+  uint8_t digit;
+  uint8_t wholedigits=1;
+  uint8_t i=0;
+  uint8_t whole = val;
+  if (whole > 99)
+      wholedigits = 3;
+  else
+    if (whole > 9)
+      wholedigits = 2;
+    else
+      wholedigits = 1;
+  for (i=0;i<wholedigits; i++)
+    {
+      if ((wholedigits-i) == 3)
+      {
+	digit=((whole&64)&&(whole&32)&&(whole&28))?1:0;
+	U7A[i]='0'+digit;
+      }
+      else
+	if ((wholedigits-i) == 2)
+	  {
+	    digit = mod10(((whole&64)?6:0) + ((whole&32)?3:0) + ((whole&16)?1:0) +
+			  (((
+			    ((whole&8)&&(whole&16)&&(((whole&64)&&(whole&38))||((whole&4)&&(whole&34))))||
+			    (((whole&8)&&(whole&64)&&(whole&4)&&(whole&32)&&(whole&2))))?2:
+			    ((((whole&8)&&(whole&118))||((whole&16)&&((whole&68)||((whole&32)&&(whole&2))))||((whole&64)&&(whole&32)&&(whole&4)))?1:0
+			     ))));
+	    U7A[i]='0'+digit;
+	  }
+	else
+	  if ((wholedigits-i) == 1)
+	    {
+	      digit = mod10 (((whole&64)?4:0) + ((whole&32)?2:0) + ((whole & 16)?6:0) + (whole&15));
+	      U7A[i]='0'+digit;
+	    }
+    }
+  U7A[wholedigits]=0;
+}
+
 volatile unsigned char U16A[6];
 void U16toA(uint16_t val)
 {
@@ -256,8 +308,13 @@ void process_gcode(volatile const unsigned char * buffer)
   /*  uint8_t duty_cycle; */
 #endif
 #ifdef HAS_AMG88XX
+  uint8_t i;
   static const unsigned char temperaturemessage[] PROGMEM = "ok S:";
+  static const unsigned char startcameramessage[] PROGMEM = "ok\r\n\"image_as_json\":{";
+  static const unsigned char pixelMessage[] PROGMEM = " \"p";
+  static const unsigned char stopcameramessage[] PROGMEM = " }\r\n";
   uint16_t amg_temperature;
+  uint16_t pixel_temperature;
 #endif
   
   rem=skipSpc(buffer);
@@ -285,6 +342,7 @@ void process_gcode(volatile const unsigned char * buffer)
 #endif
 	  case 111:
 	    {
+	      /* turn echo on and off. */
 	      rem = skipSpc(rem);
 	      if (rem[0] == 'S')
 		{
@@ -296,9 +354,36 @@ void process_gcode(volatile const unsigned char * buffer)
 		puts_P(failmessage4);
 	      break;
 	    }
+#ifdef HAS_AMG88XX
+	  case 240:
+	    {
+	      /* grab a frame from the thermal camera. */
+	      getBytesFromReg(AMG_IMG_START, 128, AMG88XX_ADDR);
+	      puts_P(startcameramessage);
+	      for (i=0; i<64; i++)
+		{
+		  if (i!=0)
+		    putch(',');
+		  U7toA(i);
+		  puts_P(pixelMessage);
+		  puts_M(U7A);
+		  putch('\"');
+		  putch(':');
+		  putch('\"');
+		  pixel_temperature = (((twi_ret[1+i*2]&7)<<8)|twi_ret[0+i*2]);
+		  AMGTEMPtoA(pixel_temperature);
+		  puts_M(AMGTEMPA);
+		  putch('\"');
+		  flush_serial();
+		}
+	      puts_P(stopcameramessage);
+	      break;
+	    }
+#endif
 #ifdef HAS_CASE_LIGHT
 	  case 355:
 	    {
+	      /* turn the LED on the board on and off. */
 	      rem = skipSpc(rem);
 	      if (rem[0] == 'S')
 		{

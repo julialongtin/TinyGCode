@@ -28,7 +28,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #define STOP_BITS 1
 
 #define CMD_LEN_MAX 13
-#define OUTBUFSIZE 100
+#define OUTBUFSIZE 255
 
 #ifdef USE_SERIAL_H
 /* input buffers */
@@ -56,6 +56,7 @@ void InitUART(void);
 void init_putch(const unsigned char);
 void putch(const unsigned char);
 void putch_i(const unsigned char);
+void flush_serial(void);
 uint8_t puts_P(const unsigned char *);
 uint8_t my_strlen_P(const unsigned char *);
 uint8_t puts_M(const volatile unsigned char *);

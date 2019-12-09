@@ -215,6 +215,19 @@ void init_putch(unsigned char ch)
   UDR0 = ch;
 }
 
+/* FIXME: this should never be needed. */
+void flush_serial()
+{
+  while (UCSR0B & _BV(UDRIE0))
+    {
+      SMCR = _BV(SE);
+      asm volatile(
+		   "\tsleep\n"
+		   );
+      SMCR=0;
+    }
+}
+
 uint8_t getBufRemainder()
 {
   if (outbufwritepos == outbuftxpos)
