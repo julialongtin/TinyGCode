@@ -203,7 +203,7 @@ void U16toA(uint16_t val)
 {
   uint8_t digits;
   uint8_t digit;
-  uint8_t i=0;
+  uint8_t i;
   uint8_t c1;
   /*  uint8_t c2; */
   uint16_t handled=0;
