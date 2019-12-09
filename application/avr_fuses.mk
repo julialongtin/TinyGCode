@@ -64,17 +64,21 @@ FUSE_BOOTRST=${PROGRAMMED}
 endif
 
 ifeq (${BOARD_HAS_CRYSTAL},True)
-ifeq (${CPUFREQ},${BOARD_CRYSTAL_SPEED})
 # The required positions of the fuses to use the external crystal.
 FUSE_CKSEL3=${UNPROGRAMMED}
 FUSE_CKSEL2=${UNPROGRAMMED}
 FUSE_CKSEL1=${UNPROGRAMMED}
 FUSE_CKSEL0=${UNPROGRAMMED}
-FUSE_CKDIV8=${UNPROGRAMMED}
 FUSE_SUT1=${UNPROGRAMMED}
 FUSE_SUT0=${UNPROGRAMMED}
+ifeq (${CPUFREQ},${BOARD_CRYSTAL_SPEED})
+FUSE_CKDIV8=${UNPROGRAMMED}
+else
+ifeq (${CPUFREQ},$(shell bash -c "echo \"${BOARD_CRYSTAL_SPEED}/8\" | bc"))
+FUSE_CKDIV8=${PROGRAMMED}
 else
 $(error Only supporting the external crystal, for now.)
+endif
 endif
 else
 $(error Only supporting the external crystal, for now.)
